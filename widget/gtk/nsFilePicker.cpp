@@ -22,6 +22,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
+#include "gfxPlatform.h"
 
 #include "nsArrayEnumerator.h"
 #include "nsEnumeratorUtils.h"

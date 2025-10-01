@@ -131,6 +131,9 @@ class HeadlessWidget final : public nsBaseWidget {
       double aDeltaX, double aDeltaY, int32_t aModifierFlags,
       nsISynthesizedEventCallback* aCallback) override;
 
+  using SnapshotListener = std::function<void(RefPtr<gfx::DataSourceSurface>&&)>;
+  void SetSnapshotListener(SnapshotListener&& listener);
+
  private:
   ~HeadlessWidget();
   bool mEnabled;

@@ -269,6 +269,8 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetForceOffline(GetForceOffline());
   txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
+  txn.SetPrefersReducedMotionOverride(GetPrefersReducedMotionOverride());
+  txn.SetForcedColorsOverride(GetForcedColorsOverride());
 
   // Propagate some settings on BrowsingContext replacement so they're not lost
   // on bfcached navigations. These are important for GeckoView (see bug
@@ -1726,6 +1728,12 @@ void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
     return;
   }
 
+  {
+    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(ToSupports(this), "juggler-navigation-started-browser", NS_ConvertASCIItoUTF16(nsPrintfCString("%" PRIu64, loadState->GetLoadIdentifier())).get());
+    }
+  }
   LoadURI(loadState, true);
 }
 

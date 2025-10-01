@@ -53,9 +53,10 @@ namespace webrtc {
 
 DesktopCaptureImpl* DesktopCaptureImpl::Create(const int32_t aModuleId,
                                                const char* aUniqueId,
-                                               const CaptureDeviceType aType) {
+                                               const CaptureDeviceType aType,
+                                               bool aCaptureCursor) {
   return new webrtc::RefCountedObject<DesktopCaptureImpl>(aModuleId, aUniqueId,
-                                                          aType);
+                                                          aType, aCaptureCursor);
 }
 
 static DesktopCaptureOptions CreateDesktopCaptureOptions() {
@@ -156,8 +157,10 @@ static std::unique_ptr<DesktopCapturer> CreateTabCapturer(
 
 static std::unique_ptr<DesktopCapturer> CreateDesktopCapturerAndThread(
     CaptureDeviceType aDeviceType, DesktopCapturer::SourceId aSourceId,
-    nsIThread** aOutThread) {
+    nsIThread** aOutThread, bool aCaptureCursor) {
   DesktopCaptureOptions options = CreateDesktopCaptureOptions();
+  if (aCaptureCursor)
+    options.set_prefer_cursor_embedded(aCaptureCursor);
   auto ensureThread = [&]() {
     if (*aOutThread) {
       return *aOutThread;
@@ -254,7 +257,8 @@ static std::unique_ptr<DesktopCapturer> CreateDesktopCapturerAndThread(
 }
 
 DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
-                                       const CaptureDeviceType aType)
+                                       const CaptureDeviceType aType,
+                                       bool aCaptureCursor)
     : mModuleId(aId),
       mTrackingId(mozilla::TrackingId(CaptureEngineToTrackingSourceStr([&] {
                                         switch (aType) {
@@ -271,6 +275,7 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
                                       aId)),
       mDeviceUniqueId(aUniqueId),
       mDeviceType(aType),
+      capture_cursor_(aCaptureCursor),
       mControlThread(mozilla::GetCurrentSerialEventTarget()),
       mNextFrameMinimumTime(Timestamp::Zero()),
       mCallbacks("DesktopCaptureImpl::mCallbacks") {}
@@ -292,6 +297,19 @@ void DesktopCaptureImpl::DeRegisterCaptureDataCallback(
   auto it = callbacks->find(aDataCallback);
   if (it != callbacks->end()) {
     callbacks->erase(it);
+  }
+}
+
+void DesktopCaptureImpl::RegisterRawFrameCallback(RawFrameCallback* rawFrameCallback) {
+  webrtc::CritScope lock(&mApiCs);
+  _rawFrameCallbacks.insert(rawFrameCallback);
+}
+
+void DesktopCaptureImpl::DeRegisterRawFrameCallback(RawFrameCallback* rawFrameCallback) {
+  webrtc::CritScope lock(&mApiCs);
+  auto it = _rawFrameCallbacks.find(rawFrameCallback);
+  if (it != _rawFrameCallbacks.end()) {
+    _rawFrameCallbacks.erase(it);
   }
 }
 
@@ -350,7 +368,7 @@ int32_t DesktopCaptureImpl::StartCapture(
     return -1;
   }
   std::unique_ptr capturer = CreateDesktopCapturerAndThread(
-      mDeviceType, sourceId, getter_AddRefs(mCaptureThread));
+      mDeviceType, sourceId, getter_AddRefs(mCaptureThread), capture_cursor_);
 
   MOZ_ASSERT(!capturer == !mCaptureThread);
   if (!capturer) {
@@ -457,6 +475,15 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
   frameInfo.width = aFrame->size().width();
   frameInfo.height = aFrame->size().height();
   frameInfo.videoType = VideoType::kARGB;
+
+  size_t videoFrameStride =
+      frameInfo.width * DesktopFrame::kBytesPerPixel;
+  {
+    webrtc::CritScope cs(&mApiCs);
+    for (auto rawFrameCallback : _rawFrameCallbacks) {
+      rawFrameCallback->OnRawFrame(videoFrame, videoFrameStride, frameInfo);
+    }
+  }
 
   size_t videoFrameLength =
       frameInfo.width * frameInfo.height * DesktopFrame::kBytesPerPixel;

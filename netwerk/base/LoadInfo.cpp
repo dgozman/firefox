@@ -800,7 +800,8 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
           rhs.mHasInjectedCookieForCookieBannerHandling),
       mSchemelessInput(rhs.mSchemelessInput),
       mHttpsUpgradeTelemetry(rhs.mHttpsUpgradeTelemetry),
-      mIsNewWindowTarget(rhs.mIsNewWindowTarget) {
+      mIsNewWindowTarget(rhs.mIsNewWindowTarget),
+      mJugglerLoadIdentifier(rhs.mJugglerLoadIdentifier) {
 }
 
 LoadInfo::LoadInfo(
@@ -2775,6 +2776,18 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
     // IPAddress space of the browsing context
     mParentIPAddressSpace = bc->GetCurrentIPAddressSpace();
   }
+}
+
+NS_IMETHODIMP
+LoadInfo::GetJugglerLoadIdentifier(uint64_t* aResult) {
+  *aResult = mJugglerLoadIdentifier;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::SetJugglerLoadIdentifier(uint64_t aID) {
+  mJugglerLoadIdentifier = aID;
+  return NS_OK;
 }
 
 }  // namespace mozilla::net
