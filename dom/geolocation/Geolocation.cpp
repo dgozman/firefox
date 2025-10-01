@@ -394,7 +394,10 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  if (mBehavior != SystemGeolocationPermissionBehavior::NoPrompt) {
+  RefPtr<nsGeolocationService> gs = nsGeolocationService::GetGeolocationService(
+      mLocator->GetBrowsingContext());
+
+  if (mBehavior != SystemGeolocationPermissionBehavior::NoPrompt && !gs->IsOverride()) {
     // Asynchronously present the system dialog or open system preferences
     // (RequestGeolocationPermissionFromUser will know which to do), and wait
     // for the permission to change or the request to be canceled.  If the
@@ -426,8 +429,6 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  RefPtr<nsGeolocationService> gs = nsGeolocationService::GetGeolocationService(
-      mLocator->GetBrowsingContext());
   bool canUseCache = false;
   CachedPositionAndAccuracy lastPosition = gs->GetCachedPosition();
   if (lastPosition.position) {
@@ -710,9 +711,14 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(nsGeolocationService)
 NS_IMPL_RELEASE(nsGeolocationService)
 
-nsresult nsGeolocationService::Init() {
+nsresult nsGeolocationService::Init(bool isOverride) {
   if (!StaticPrefs::geo_enabled()) {
     return NS_ERROR_FAILURE;
+  }
+
+  if (isOverride) {
+    mIsOverride = true;
+    mHigherAccuracy = true;
   }
 
   if (XRE_IsContentProcess()) {
@@ -791,6 +797,10 @@ nsresult nsGeolocationService::Init() {
   }
 
   return NS_OK;
+}
+
+bool nsGeolocationService::IsOverride() {
+  return mIsOverride;
 }
 
 nsGeolocationService::~nsGeolocationService() = default;
@@ -936,6 +946,10 @@ bool nsGeolocationService::HighAccuracyRequested() {
 }
 
 void nsGeolocationService::UpdateAccuracy(bool aForceHigh) {
+  if (mIsOverride) {
+    return;
+  }
+
   bool highRequired = aForceHigh || HighAccuracyRequested();
 
   if (XRE_IsContentProcess()) {

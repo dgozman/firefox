@@ -3495,7 +3495,7 @@ void BrowsingContext::SetGeolocationServiceOverride(
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
       mGeolocationServiceOverride = new nsGeolocationService();
-      mGeolocationServiceOverride->Init();
+      mGeolocationServiceOverride->Init(true /* isOverride */);
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
   } else if (RefPtr<nsGeolocationService> serviceOverride =
