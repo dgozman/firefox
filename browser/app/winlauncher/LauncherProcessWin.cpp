@@ -248,8 +248,6 @@ static mozilla::LauncherFlags ProcessCmdLine(int& aArgc, wchar_t* aArgv[]) {
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::CheckArg(aArgc, aArgv, "remote-debugging-port", nullptr,
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
-      mozilla::CheckArg(aArgc, aArgv, "juggler-pipe", nullptr,
-                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::EnvHasValue("MOZ_AUTOMATION") ||
       mozilla::EnvHasValue("MOZ_HEADLESS")) {
     result |= mozilla::LauncherFlags::eWaitForBrowser;
