@@ -20,6 +20,7 @@
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsWindowsHelpers.h"
 
+#include <io.h>
 #include <windows.h>
 #include <processthreadsapi.h>
 #include <shlwapi.h>
@@ -246,6 +247,8 @@ static mozilla::LauncherFlags ProcessCmdLine(int& aArgc, wchar_t* aArgv[]) {
       mozilla::CheckArg(aArgc, aArgv, "headless", nullptr,
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::CheckArg(aArgc, aArgv, "remote-debugging-port", nullptr,
+                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
+      mozilla::CheckArg(aArgc, aArgv, "juggler-pipe", nullptr,
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::EnvHasValue("MOZ_AUTOMATION") ||
       mozilla::EnvHasValue("MOZ_HEADLESS")) {
@@ -492,8 +495,18 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   HANDLE stdHandles[] = {::GetStdHandle(STD_INPUT_HANDLE),
                          ::GetStdHandle(STD_OUTPUT_HANDLE),
                          ::GetStdHandle(STD_ERROR_HANDLE)};
-
   attrs.AddInheritableHandles(stdHandles);
+  // Playwright pipe installation.
+  bool hasJugglerPipe =
+      mozilla::CheckArg(argc, argv, "juggler-pipe", nullptr,
+                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND;
+  if (hasJugglerPipe) {
+    intptr_t stdio3 = _get_osfhandle(3);
+    intptr_t stdio4 = _get_osfhandle(4);
+    HANDLE pipeHandles[] = {reinterpret_cast<HANDLE>(stdio3),
+                            reinterpret_cast<HANDLE>(stdio4)};
+    attrs.AddInheritableHandles(pipeHandles);
+  }
 
   DWORD creationFlags = CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT;
 
@@ -547,6 +560,15 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   if (!createOk) {
     HandleLauncherError(LAUNCHER_ERROR_FROM_LAST());
     return Nothing();
+  }
+
+  // Playwright: close the launcher's copies of the juggler pipe fds now
+  // that the browser process has inherited them. Otherwise the launcher
+  // keeps client handles to the duplex named pipes alive for its lifetime,
+  // which prevents the browser from detecting Playwright's disconnect.
+  if (hasJugglerPipe) {
+    _close(3);
+    _close(4);
   }
 
   nsAutoHandle process(pi.hProcess);

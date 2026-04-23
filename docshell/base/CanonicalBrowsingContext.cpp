@@ -272,6 +272,8 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetInnerSizeSpoofedForRFP(GetInnerSizeSpoofedForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
   txn.SetParentalControlsEnabled(GetParentalControlsEnabled());
+  txn.SetPrefersReducedMotionOverride(GetPrefersReducedMotionOverride());
+  txn.SetForcedColorsOverride(GetForcedColorsOverride());
 
   if (!GetLanguageOverride().IsEmpty()) {
     // Reapply language override to update the corresponding realm.
@@ -1885,6 +1887,12 @@ void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
     (void)SetIsCaptivePortalTab(true);
   }
 
+  {
+    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(ToSupports(this), "juggler-navigation-started-browser", NS_ConvertASCIItoUTF16(nsPrintfCString("%" PRIu64, loadState->GetLoadIdentifier())).get());
+    }
+  }
   LoadURI(loadState, true);
 }
 
