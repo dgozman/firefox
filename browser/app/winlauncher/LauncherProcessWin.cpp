@@ -248,6 +248,8 @@ static mozilla::LauncherFlags ProcessCmdLine(int& aArgc, wchar_t* aArgv[]) {
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::CheckArg(aArgc, aArgv, "remote-debugging-port", nullptr,
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
+      mozilla::CheckArg(aArgc, aArgv, "juggler-pipe", nullptr,
+                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND ||
       mozilla::EnvHasValue("MOZ_AUTOMATION") ||
       mozilla::EnvHasValue("MOZ_HEADLESS")) {
     result |= mozilla::LauncherFlags::eWaitForBrowser;
@@ -558,6 +560,15 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   if (!createOk) {
     HandleLauncherError(LAUNCHER_ERROR_FROM_LAST());
     return Nothing();
+  }
+
+  // Playwright: close the launcher's copies of the juggler pipe fds now
+  // that the browser process has inherited them. Otherwise the launcher
+  // keeps client handles to the duplex named pipes alive for its lifetime,
+  // which prevents the browser from detecting Playwright's disconnect.
+  if (hasJugglerPipe) {
+    _close(3);
+    _close(4);
   }
 
   nsAutoHandle process(pi.hProcess);
