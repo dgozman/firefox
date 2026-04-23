@@ -117,8 +117,15 @@ struct ParamTraits<mozilla::dom::DisplayMode>
 
 template <>
 struct ParamTraits<mozilla::dom::PrefersColorSchemeOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<
-          mozilla::dom::PrefersColorSchemeOverride> {};
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersColorSchemeOverride> {};
+
+template <>
+struct ParamTraits<mozilla::dom::PrefersReducedMotionOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersReducedMotionOverride> {};
+
+template <>
+struct ParamTraits<mozilla::dom::PrefersContrastOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersContrastOverride> {};
 
 template <>
 struct ParamTraits<mozilla::dom::ForcedColorsOverride>
@@ -3355,6 +3362,32 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
   });
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+                             dom::PrefersContrastOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersContrastOverride() == aOldValue) {
+    return;
+  }
+  PresContextAffectingFieldChanged();
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
+                             dom::PrefersReducedMotionOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersReducedMotionOverride() == aOldValue) {
+    return;
+  }
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (nsIDocShell* shell = aContext->GetDocShell()) {
+      if (nsPresContext* pc = shell->GetPresContext()) {
+        pc->MediaFeatureValuesChanged(
+            {MediaFeatureChangeReason::SystemMetricsChange},
+            MediaFeatureChangePropagation::JustThisDocument);
+      }
+    }
+  });
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -3702,7 +3735,7 @@ void BrowsingContext::SetGeolocationServiceOverride(
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
       mGeolocationServiceOverride = new nsGeolocationService();
-      mGeolocationServiceOverride->Init();
+      mGeolocationServiceOverride->Init(true /* isOverride */);
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
   } else if (RefPtr<nsGeolocationService> serviceOverride =
