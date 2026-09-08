@@ -113,7 +113,9 @@ EnterprisePoliciesManager.prototype = {
       Services.prefs.clearUserPref(PREF_POLICIES_APPLIED);
     }
 
-    let provider = this._buildProvider();
+    // --- Playwright begin ---
+    let provider = new PlaywrightPoliciesProvider();
+    // --- Playwright end ---
 
     if (provider.failed) {
       this.status = Ci.nsIEnterprisePolicies.FAILED;
@@ -757,6 +759,19 @@ class JSONPoliciesProvider extends PoliciesProvider {
         this._failed = true;
       }
     }
+  }
+}
+
+class PlaywrightPoliciesProvider extends JSONPoliciesProvider {
+  _getConfigurationFile() {
+    let prefPath = Services.prefs.getStringPref(PREF_ALTERNATE_PATH, "");
+    if (!prefPath)
+      return null;
+
+    dump(`Playwright: loading enterprise policies from ${prefPath}\n`);
+    let configFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    configFile.initWithPath(prefPath);
+    return configFile;
   }
 }
 
