@@ -157,6 +157,10 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   bool mExecutionAborted = false;
   bool mMutedErrorFlag = false;
 
+  // ----- Playwright begin -----
+  uint32_t mEvaluatingScriptCount = 0;
+  // ----- Playwright end -------
+
   // Count of loading module requests. mLoadingRequests doesn't keep track of
   // child module requests.
   // This member should be accessed on worker thread.
@@ -228,7 +232,9 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   bool ProcessPendingRequests(JSContext* aCx);
 
   bool AllScriptsExecuted() {
-    return mLoadingRequests.isEmpty() && mLoadedRequests.isEmpty();
+    // https://github.com/microsoft/playwright/issues/42565
+    return mEvaluatingScriptCount == 0 && mLoadingRequests.isEmpty() &&
+           mLoadedRequests.isEmpty();
   }
 
   bool IsDebuggerScript() const { return mWorkerScriptType == DebuggerScript; }

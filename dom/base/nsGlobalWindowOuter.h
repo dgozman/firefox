@@ -302,7 +302,12 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   static void PrepareForProcessChange(JSObject* aProxy);
 
   // Outer windows only.
+<<<<<<< ours
   MOZ_CAN_RUN_SCRIPT void DispatchDOMWindowCreated();
+=======
+  void DispatchDOMWindowCreated();
+  void JugglerDispatchDOMWindowReused();
+>>>>>>> theirs
 
   // Outer windows only.
   virtual void EnsureSizeAndPositionUpToDate() override;

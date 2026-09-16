@@ -103,8 +103,12 @@ class nsGeolocationRequest final : public ContentPermissionRequestBase,
 
   NS_IMETHOD GetIgnoreAllowSitePermission(
       bool* aIgnoreAllowSitePermission) override {
+    RefPtr<GeolocationService> gs =
+        GeolocationService::GetGeolocationService(
+            mLocator->GetBrowsingContext());
     *aIgnoreAllowSitePermission =
-        mBehavior != geolocation::SystemGeolocationPermissionBehavior::NoPrompt;
+        mBehavior != geolocation::SystemGeolocationPermissionBehavior::NoPrompt &&
+        !gs->IsOverride();
     return NS_OK;
   }
 
@@ -393,7 +397,11 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
         self->Cancel();
       };
 
-  if (mBehavior != SystemGeolocationPermissionBehavior::NoPrompt) {
+  RefPtr<GeolocationService> gs =
+      GeolocationService::GetGeolocationService(
+          mLocator->GetBrowsingContext());
+  if (mBehavior != SystemGeolocationPermissionBehavior::NoPrompt &&
+      !gs->IsOverride()) {
     // Asynchronously present the system dialog or open system preferences
     // (RequestGeolocationPermissionFromUser will know which to do), and wait
     // for the permission to change or the request to be canceled.  If the
@@ -417,8 +425,6 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  RefPtr<GeolocationService> gs =
-      GeolocationService::GetGeolocationService(mLocator->GetBrowsingContext());
   bool canUseCache = false;
   CachedPositionAndAccuracy lastPosition = gs->GetCachedPosition();
   if (lastPosition.position) {
