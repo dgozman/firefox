@@ -7824,12 +7824,6 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
                      true,  // aForceNoOpener
                      getter_AddRefs(newBC));
       MOZ_ASSERT(!newBC);
-      if (rv == NS_OK) {
-        nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-        if (observerService) {
-          observerService->NotifyObservers(GetAsSupports(this), "juggler-window-open-in-new-context", nullptr);
-        }
-      }
       return rv;
     }
 
