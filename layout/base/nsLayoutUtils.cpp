@@ -701,7 +701,6 @@ bool nsLayoutUtils::AllowZoomingForDocument(const Document* aDocument) {
       !aDocument->GetPresShell()->AsyncPanZoomEnabled()) {
     return false;
   }
-
   // True if we allow zooming for all documents on this platform, or if we are
   // in RDM.
   BrowsingContext* bc = aDocument->GetBrowsingContext();

@@ -444,8 +444,6 @@ dictionary SynthesizeMouseEventOptions : SynthesizeEventOptions {
   boolean ignoreRootScrollFrame = false;
   // Controls WidgetMouseEvent.mReason value.
   boolean isWidgetEventSynthesized = false;
-  // Playwright
-  boolean jugglerConvertToPointer = true;
 };
 
 // Mozilla-specific stuff

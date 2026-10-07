@@ -206,11 +206,11 @@ struct EmbedderColorSchemes {
   FIELD(HasScreenAreaOverride, bool)                                          \
   /* ScreenOrientation-related APIs */                                        \
   FIELD(CurrentOrientationAngle, float)                                       \
-  FIELD(CurrentOrientationType, dom::OrientationType)                \
+  FIELD(CurrentOrientationType, mozilla::dom::OrientationType)                \
   FIELD(OrientationLock, mozilla::hal::ScreenOrientation)                     \
   FIELD(HasOrientationOverride, bool)                                         \
   FIELD(UserAgentOverride, nsString)                                          \
-  FIELD(TouchEventsOverrideInternal, dom::TouchEventsOverride)       \
+  FIELD(TouchEventsOverrideInternal, mozilla::dom::TouchEventsOverride)       \
   FIELD(EmbedderElementType, Maybe<nsString>)                                 \
   FIELD(MessageManagerGroup, nsString)                                        \
   FIELD(MaxTouchPointsOverride, uint8_t)                                      \

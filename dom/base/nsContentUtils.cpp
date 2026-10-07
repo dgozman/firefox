@@ -10530,7 +10530,6 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
       aOptions.mIsDOMEventSynthesized;
   mouseOrPointerEvent.mExitFrom = std::move(exitFrom);
   mouseOrPointerEvent.mCallbackId = notifier.SaveCallback();
-  mouseOrPointerEvent.convertToPointer = aOptions.mJugglerConvertToPointer;
 
   nsPresContext* presContext = aPresShell->GetPresContext();
   if (!presContext) {

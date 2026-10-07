@@ -16,12 +16,6 @@
 #endif
 
 #include "nsDeviceContext.h"
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-#  include "unicode/locid.h"
-#endif /* JS_HAS_INTL_API && !MOZ_SYSTEM_ICU */
-
-#include "js/LocaleSensitive.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
@@ -104,7 +98,6 @@
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/glean/DocshellMetrics.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/net/DocumentChannel.h"
 #include "mozilla/net/DocumentChannelChild.h"
 #include "mozilla/net/ParentChannelWrapper.h"
@@ -129,7 +122,6 @@
 #include "nsIDocumentViewer.h"
 #include "mozilla/dom/Document.h"
 #include "nsHTMLDocument.h"
-#include "mozilla/dom/Element.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsIDOMWindow.h"
 #include "nsIEditingSession.h"
@@ -226,7 +218,6 @@
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsJSEnvironment.h"
-#include "nsJSUtils.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsObjectLoadingContent.h"
