@@ -2548,10 +2548,16 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     }();
 
     if (!isAboutBlankInChromeDocshell) {
-      newInnerWindow->mHasNotifiedGlobalCreated = true;
-      nsContentUtils::AddScriptRunner(NewRunnableMethod(
-          "nsGlobalWindowOuter::DispatchDOMWindowCreated", this,
-          &nsGlobalWindowOuter::DispatchDOMWindowCreated));
+      if (!newInnerWindow->mHasNotifiedGlobalCreated) {
+        newInnerWindow->mHasNotifiedGlobalCreated = true;
+        nsContentUtils::AddScriptRunner(NewRunnableMethod(
+            "nsGlobalWindowOuter::DispatchDOMWindowCreated", this,
+            &nsGlobalWindowOuter::DispatchDOMWindowCreated));
+      } else if (!reUseInnerWindow) {
+        nsContentUtils::AddScriptRunner(NewRunnableMethod(
+            "nsGlobalWindowOuter::JugglerDispatchDOMWindowReused", this,
+            &nsGlobalWindowOuter::JugglerDispatchDOMWindowReused));
+      }
     }
   }
 
@@ -2669,6 +2675,19 @@ void nsGlobalWindowOuter::DispatchDOMWindowCreated() {
                                          ? "chrome-document-global-created"
                                          : "content-document-global-created",
                                      origin.get());
+  }
+}
+
+void nsGlobalWindowOuter::JugglerDispatchDOMWindowReused() {
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (observerService && mDoc) {
+    nsIPrincipal* principal = mDoc->NodePrincipal();
+    if (!principal->IsSystemPrincipal()) {
+      observerService->NotifyObservers(static_cast<nsIDOMWindow*>(this),
+                                      "juggler-dom-window-reused",
+                                      nullptr);
+    }
   }
 }
 

@@ -303,6 +303,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   // Outer windows only.
   MOZ_CAN_RUN_SCRIPT void DispatchDOMWindowCreated();
+  void JugglerDispatchDOMWindowReused();
 
   // Outer windows only.
   virtual void EnsureSizeAndPositionUpToDate() override;
