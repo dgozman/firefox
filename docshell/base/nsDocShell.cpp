@@ -356,7 +356,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowDNSPrefetch(true),
       mAllowWindowControl(true),
       mCSSErrorReportingEnabled(false),
-      mFileInputInterceptionEnabled(false),
       mOverrideHasFocus(false),
       mBypassCSPEnabled(false),
       mForceActiveState(false),
@@ -3040,30 +3039,6 @@ nsDocShell::SetOverrideHasFocus(bool aEnabled) {
 
 bool nsDocShell::ShouldOverrideHasFocus() {
   return GetRootDocShell()->mOverrideHasFocus;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetFileInputInterceptionEnabled(bool* aEnabled) {
-  MOZ_ASSERT(aEnabled);
-  *aEnabled = GetRootDocShell()->mFileInputInterceptionEnabled;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetFileInputInterceptionEnabled(bool aEnabled) {
-  mFileInputInterceptionEnabled = aEnabled;
-  return NS_OK;
-}
-
-bool nsDocShell::IsFileInputInterceptionEnabled() {
-  return GetRootDocShell()->mFileInputInterceptionEnabled;
-}
-
-void nsDocShell::FilePickerShown(mozilla::dom::Element* element) {
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  observerService->NotifyObservers(
-      ToSupports(element), "juggler-file-picker-shown", nullptr);
 }
 
 // =============== Juggler End =======================

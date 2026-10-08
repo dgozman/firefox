@@ -16,7 +16,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsCOMPtr.h"
 #include "nsCharsetSource.h"
@@ -383,9 +382,6 @@ class nsDocShell final : public nsDocLoader,
 
   void SetWillChangeProcess() { mWillChangeProcess = true; }
   bool WillChangeProcess() { return mWillChangeProcess; }
-
-  bool IsFileInputInterceptionEnabled();
-  void FilePickerShown(mozilla::dom::Element* element);
 
   bool ShouldOverrideHasFocus();
 
@@ -1342,7 +1338,6 @@ class nsDocShell final : public nsDocLoader,
   bool mAllowDNSPrefetch : 1;
   bool mAllowWindowControl : 1;
   bool mCSSErrorReportingEnabled : 1;
-  bool mFileInputInterceptionEnabled: 1;
   bool mOverrideHasFocus : 1;
   bool mBypassCSPEnabled : 1;
   bool mForceActiveState : 1;

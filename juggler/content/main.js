@@ -62,7 +62,7 @@ export function initialize(browsingContext, docShell) {
   data.frameTree.setInitScripts([...contextCrossProcessCookie.initScripts, ...pageCrossProcessCookie.initScripts]);
   data.channel = new SimpleChannel('', 'process-' + Services.appinfo.processID + '-' + helper.generateId());
   data.pageAgent = new PageAgent(data.channel, data.frameTree);
-  docShell.fileInputInterceptionEnabled = !!pageCrossProcessCookie.interceptFileChooserDialog;
+  data.pageAgent.setInterceptFileChooserDialog(!!pageCrossProcessCookie.interceptFileChooserDialog);
 
   data.channel.register('', {
     setInitScripts(scripts) {
@@ -78,7 +78,7 @@ export function initialize(browsingContext, docShell) {
     },
 
     setInterceptFileChooserDialog(enabled) {
-      docShell.fileInputInterceptionEnabled = !!enabled;
+      data.pageAgent.setInterceptFileChooserDialog(!!enabled);
     },
 
     ensurePermissions() {

@@ -684,8 +684,6 @@ interface nsIDocShell : nsIDocShellTreeItem
    */
   void synchronizeLayoutHistoryState();
 
-  attribute boolean fileInputInterceptionEnabled;
-
   attribute boolean overrideHasFocus;
 
   attribute boolean bypassCSPEnabled;
