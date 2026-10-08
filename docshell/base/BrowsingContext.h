@@ -260,6 +260,8 @@ struct EmbedderColorSchemes {
    * scrollbars clear the rounded content-area corners. */                    \
   FIELD(EmbedderScrollbarInset, LayoutDeviceIntMargin)                        \
   FIELD(DisplayMode, dom::DisplayMode)                                        \
+  /* playwright addition */                                                   \
+  FIELD(PrefersContrastOverride, dom::PrefersContrastOverride)                \
   /* The number of entries added to the session history because of this       \
    * browsing context. */                                                     \
   FIELD(HistoryEntryCount, uint32_t)                                          \
@@ -1122,6 +1124,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return Top()->GetAnimationsPlayBackRateMultiplier();
   }
 
+  dom::PrefersContrastOverride PrefersContrastOverride() const {
+    return GetPrefersContrastOverride();
+  }
+
   bool IsInBFCache() const;
   bool IsEnteringBFCache() const { return mIsEnteringBFCache; }
   void DeactivateDocuments();
@@ -1347,6 +1353,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return IsTop();
   }
 
+  bool CanSet(FieldIndex<IDX_PrefersContrastOverride>,
+              dom::PrefersContrastOverride, ContentParent*) {
+    return IsTop();
+  }
+
   bool CanSet(FieldIndex<IDX_ForcedColorsOverride>, dom::ForcedColorsOverride,
               ContentParent*) {
     return IsTop();
@@ -1389,6 +1400,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
               double aOldValue);
+
+  void DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+              dom::PrefersContrastOverride aOldValue);
 
   template <typename Callback>
   void WalkPresContexts(Callback&&);
