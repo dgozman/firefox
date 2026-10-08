@@ -51,7 +51,6 @@
 #include "mozilla/Telemetry.h"
 
 #include "mozilla/WidgetUtils.h"
-#include "mozilla/GeolocationService.h"
 
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ChildProcessChannelListener.h"
@@ -65,7 +64,6 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FragmentDirective.h"
-#include "mozilla/dom/Geolocation.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/Navigation.h"
@@ -362,10 +360,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mOverrideHasFocus(false),
       mBypassCSPEnabled(false),
       mForceActiveState(false),
-      mDisallowBFCache(false),
-      mReducedMotionOverride(REDUCED_MOTION_OVERRIDE_NONE),
-      mForcedColorsOverride(FORCED_COLORS_OVERRIDE_NO_OVERRIDE),
-      mContrastOverride(CONTRAST_OVERRIDE_NONE),
       mAllowAuth(mItemType == typeContent),
       mAllowKeywordFixup(false),
       mDisableMetaRefreshWhenInactive(false),
@@ -3027,19 +3021,6 @@ nsDocShell::SetForceActiveState(bool aEnabled) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsDocShell::GetDisallowBFCache(bool* aEnabled) {
-  MOZ_ASSERT(aEnabled);
-  *aEnabled = mDisallowBFCache;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetDisallowBFCache(bool aEnabled) {
-  mDisallowBFCache = aEnabled;
-  return NS_OK;
-}
-
 bool nsDocShell::IsBypassCSPEnabled() {
   return GetRootDocShell()->mBypassCSPEnabled;
 }
@@ -3083,78 +3064,6 @@ void nsDocShell::FilePickerShown(mozilla::dom::Element* element) {
       mozilla::services::GetObserverService();
   observerService->NotifyObservers(
       ToSupports(element), "juggler-file-picker-shown", nullptr);
-}
-
-RefPtr<GeolocationService> nsDocShell::GetGeolocationServiceOverride() {
-  return GetRootDocShell()->mGeolocationServiceOverride;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetGeolocationOverride(nsIDOMGeoPosition* aGeolocationOverride) {
-  if (aGeolocationOverride) {
-    if (!mGeolocationServiceOverride) {
-      mGeolocationServiceOverride = new GeolocationService();
-      mGeolocationServiceOverride->Init(true /* isOverride */);
-    }
-    mGeolocationServiceOverride->Update(aGeolocationOverride);
-  } else {
-    mGeolocationServiceOverride = nullptr;
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetReducedMotionOverride(ReducedMotionOverride* aReducedMotionOverride) {
-  *aReducedMotionOverride = GetRootDocShell()->mReducedMotionOverride;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetReducedMotionOverride(ReducedMotionOverride aReducedMotionOverride) {
-  mReducedMotionOverride = aReducedMotionOverride;
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  if (presContext) {
-    presContext->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::SystemMetricsChange},
-        MediaFeatureChangePropagation::JustThisDocument);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetForcedColorsOverride(ForcedColorsOverride* aForcedColorsOverride) {
-  *aForcedColorsOverride = GetRootDocShell()->mForcedColorsOverride;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetForcedColorsOverride(ForcedColorsOverride aForcedColorsOverride) {
-  mForcedColorsOverride = aForcedColorsOverride;
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  if (presContext) {
-    presContext->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::SystemMetricsChange},
-        MediaFeatureChangePropagation::JustThisDocument);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetContrastOverride(ContrastOverride* aContrastOverride) {
-  *aContrastOverride = GetRootDocShell()->mContrastOverride;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetContrastOverride(ContrastOverride aContrastOverride) {
-  mContrastOverride = aContrastOverride;
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  if (presContext) {
-    presContext->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::SystemMetricsChange},
-        MediaFeatureChangePropagation::JustThisDocument);
-  }
-  return NS_OK;
 }
 
 // =============== Juggler End =======================
