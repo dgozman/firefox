@@ -1169,6 +1169,14 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
   mWorkerRef->Private()->AssertIsOnWorkerThread();
   MOZ_ASSERT(!IsDynamicImport(aRequest));
 
+  // ----- Playwright begin -----
+  ++mEvaluatingScriptCount;
+  auto decrementEvaluatingCount = MakeScopeExit([&] {
+    MOZ_ASSERT(mEvaluatingScriptCount > 0);
+    --mEvaluatingScriptCount;
+  });
+  // ----- Playwright end -------
+
   WorkerLoadContext* loadContext = aRequest->GetWorkerLoadContext();
 
   NS_ASSERTION(!loadContext->mChannel, "Should no longer have a channel!");
