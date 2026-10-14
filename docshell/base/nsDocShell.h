@@ -383,7 +383,7 @@ class nsDocShell final : public nsDocLoader,
   void SetWillChangeProcess() { mWillChangeProcess = true; }
   bool WillChangeProcess() { return mWillChangeProcess; }
 
-  bool ShouldOverrideHasFocus();
+  bool ShouldOverrideHasFocus() const;
 
   bool IsBypassCSPEnabled();
 

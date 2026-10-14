@@ -3037,8 +3037,8 @@ nsDocShell::SetOverrideHasFocus(bool aEnabled) {
   return NS_OK;
 }
 
-bool nsDocShell::ShouldOverrideHasFocus() {
-  return GetRootDocShell()->mOverrideHasFocus;
+bool nsDocShell::ShouldOverrideHasFocus() const {
+  return mOverrideHasFocus;
 }
 
 // =============== Juggler End =======================
