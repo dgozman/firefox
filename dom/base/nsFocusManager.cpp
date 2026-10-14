@@ -2494,8 +2494,13 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     return true;
   }
 
-  // Playwright: emulate focused page by never bluring when leaving document.
-  if (XRE_IsContentProcess() && aIsLeavingDocument && docShell && nsDocShell::Cast(docShell)->ShouldOverrideHasFocus()) {
+  // Playwright: emulate focused page by never bluring when focus leaves
+  // the page, e.g. when the window is lowered or another page is focused.
+  // Both browsing contexts are null in that case, as opposed to focus
+  // moving between frames of the same page, which must blur as usual.
+  if (XRE_IsContentProcess() && aIsLeavingDocument && !aBrowsingContextToClear &&
+      !aAncestorBrowsingContextToFocus && docShell &&
+      nsDocShell::Cast(docShell)->ShouldOverrideHasFocus()) {
     return true;
   }
 
@@ -2680,7 +2685,12 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     }
 
     // check if a different window was focused
-    result = (!GetFocusedBrowsingContext() && GetActiveBrowsingContext());
+    // Playwright: the page is emulated to be active even when
+    // the active browsing context is not set.
+    result = !GetFocusedBrowsingContext() &&
+             (GetActiveBrowsingContext() ||
+              (XRE_IsContentProcess() &&
+               nsDocShell::Cast(docShell)->ShouldOverrideHasFocus()));
   } else if (GetActiveBrowsingContext()) {
     // Otherwise, the blur of the element without blurring the document
     // occurred normally. Call UpdateCaret to redisplay the caret at the right
