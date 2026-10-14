@@ -3851,6 +3851,9 @@ void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
 }
 
 void Document::ApplySettingsFromCSP(bool aSpeculative) {
+  if (mDocumentContainer && mDocumentContainer->IsBypassCSPEnabled())
+    return;
+
   nsresult rv = NS_OK;
   if (!aSpeculative) {
     nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
@@ -3947,6 +3950,11 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
              "CSP must be initialized before mScriptGlobalObject is set!");
   MOZ_ASSERT(mPolicyContainer,
              "Policy container must be initialized before CSP!");
+
+  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
+  if (shell && nsDocShell::Cast(shell)->IsBypassCSPEnabled()) {
+    return NS_OK;
+  }
 
   // If this is a data document - no need to set CSP.
   if (mLoadedAsData) {
@@ -4928,6 +4936,14 @@ bool Document::HasFocus(ErrorResult& rv) const {
   BrowsingContext* bc = GetBrowsingContext();
   if (!bc) {
     return false;
+  }
+
+  if (IsActive() && mDocumentContainer->ShouldOverrideHasFocus()) {
+    // Emulate the window being active, but keep reporting which frame has focus.
+    if (bc->IsTop()) {
+      return true;
+    }
+    return fm->IsSameOrAncestor(bc, fm->GetFocusedBrowsingContext());
   }
 
   if (!fm->IsInActiveWindow(bc)) {
