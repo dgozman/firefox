@@ -3951,11 +3951,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   MOZ_ASSERT(mPolicyContainer,
              "Policy container must be initialized before CSP!");
 
-  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
-  if (shell && nsDocShell::Cast(shell)->IsBypassCSPEnabled()) {
-    return NS_OK;
-  }
-
   // If this is a data document - no need to set CSP.
   if (mLoadedAsData) {
     return NS_OK;
@@ -3993,6 +3988,14 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   nsresult rv = csp->SetRequestContextWithDocument(this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  // Juggler: keep the empty CSP object, since callers rely on every document
+  // having one (e.g. PerformTrustedTypesPreNavigationCheck), but never apply
+  // any policies to it.
+  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
+  if (shell && nsDocShell::Cast(shell)->IsBypassCSPEnabled()) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
