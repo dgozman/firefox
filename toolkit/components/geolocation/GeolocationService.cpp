@@ -52,9 +52,14 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(GeolocationService)
 NS_IMPL_RELEASE(GeolocationService)
 
-nsresult GeolocationService::Init() {
+nsresult GeolocationService::Init(bool aIsOverride) {
   if (!StaticPrefs::geo_enabled()) {
     return NS_ERROR_FAILURE;
+  }
+
+  if (aIsOverride) {
+    mIsOverride = true;
+    mHigherAccuracy = true;
   }
 
   if (XRE_IsContentProcess()) {
@@ -277,6 +282,10 @@ bool GeolocationService::HighAccuracyRequested() {
 }
 
 void GeolocationService::UpdateAccuracy(bool aForceHigh) {
+  if (mIsOverride) {
+    return;
+  }
+
   bool highRequired = aForceHigh || HighAccuracyRequested();
 
   if (XRE_IsContentProcess()) {
