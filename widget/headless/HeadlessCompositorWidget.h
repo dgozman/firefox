@@ -5,6 +5,11 @@
 #ifndef widget_headless_HeadlessCompositorWidget_h
 #define widget_headless_HeadlessCompositorWidget_h
 
+<<<<<<< ours
+=======
+#include "mozilla/ReentrantMonitor.h"
+#include "HeadlessWidget.h"
+>>>>>>> theirs
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/HeadlessWidget.h"
 
@@ -20,9 +25,16 @@ class HeadlessCompositorWidget : public CompositorWidget,
                            const layers::CompositorOptions& aOptions,
                            HeadlessWidget* aWindow);
 
+<<<<<<< ours
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
+=======
+  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize);
+  void SetSnapshotListener(HeadlessWidget::SnapshotListener&& listener);
+>>>>>>> theirs
 
   // CompositorWidget Overrides
+  already_AddRefed<gfx::DrawTarget> StartRemoteDrawingInRegion(
+      const LayoutDeviceIntRegion& aInvalidRegion) override;
 
   uintptr_t GetWidgetKey() override;
 
@@ -40,10 +52,18 @@ class HeadlessCompositorWidget : public CompositorWidget,
   }
 
  private:
+  void UpdateDrawTarget(const LayoutDeviceIntSize& aClientSize);
+  void PeriodicSnapshot();
+  void TakeSnapshot();
+
   HeadlessWidget* mWidget;
+  mozilla::ReentrantMonitor mMon;
 
   // See GtkCompositorWidget for the justification for this mutex.
   DataMutex<LayoutDeviceIntSize> mClientSize;
+
+  HeadlessWidget::SnapshotListener mSnapshotListener;
+  RefPtr<gfx::DrawTarget> mDrawTarget;
 };
 
 }  // namespace widget

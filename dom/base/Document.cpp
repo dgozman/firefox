@@ -3864,6 +3864,9 @@ void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
 }
 
 void Document::ApplySettingsFromCSP(bool aSpeculative) {
+  if (mDocumentContainer && mDocumentContainer->IsBypassCSPEnabled())
+    return;
+
   nsresult rv = NS_OK;
   if (!aSpeculative) {
     nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
@@ -3998,6 +4001,14 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   nsresult rv = csp->SetRequestContextWithDocument(this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  // Juggler: keep the empty CSP object, since callers rely on every document
+  // having one (e.g. PerformTrustedTypesPreNavigationCheck), but never apply
+  // any policies to it.
+  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
+  if (shell && nsDocShell::Cast(shell)->IsBypassCSPEnabled()) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
@@ -4989,6 +5000,10 @@ bool Document::HasFocus(ErrorResult& rv) const {
   BrowsingContext* bc = GetBrowsingContext();
   if (!bc) {
     return false;
+  }
+
+  if (IsActive() && mDocumentContainer->ShouldOverrideHasFocus()) {
+    return true;
   }
 
   if (!fm->IsInActiveWindow(bc)) {
