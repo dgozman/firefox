@@ -570,12 +570,16 @@ nsresult HeadlessWidget::SynthesizeNativeTouchpadPan(
 }
 
 void HeadlessWidget::SetSnapshotListener(SnapshotListener&& listener) {
-  if (!mCompositorWidget) {
+  HeadlessCompositorWidget* compositorWidget =
+      mCompositorWidgetDelegate
+          ? mCompositorWidgetDelegate->AsHeadlessCompositorWidget()
+          : nullptr;
+  if (!compositorWidget) {
     if (listener)
       fprintf(stderr, "Trying to set SnapshotListener without compositor widget\n");
     return;
   }
-  mCompositorWidget->SetSnapshotListener(std::move(listener));
+  compositorWidget->SetSnapshotListener(std::move(listener));
 }
 
 }  // namespace widget

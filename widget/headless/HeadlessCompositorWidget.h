@@ -5,11 +5,7 @@
 #ifndef widget_headless_HeadlessCompositorWidget_h
 #define widget_headless_HeadlessCompositorWidget_h
 
-<<<<<<< ours
-=======
 #include "mozilla/ReentrantMonitor.h"
-#include "HeadlessWidget.h"
->>>>>>> theirs
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/HeadlessWidget.h"
 
@@ -25,12 +21,8 @@ class HeadlessCompositorWidget : public CompositorWidget,
                            const layers::CompositorOptions& aOptions,
                            HeadlessWidget* aWindow);
 
-<<<<<<< ours
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
-=======
-  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize);
   void SetSnapshotListener(HeadlessWidget::SnapshotListener&& listener);
->>>>>>> theirs
 
   // CompositorWidget Overrides
   already_AddRefed<gfx::DrawTarget> StartRemoteDrawingInRegion(
