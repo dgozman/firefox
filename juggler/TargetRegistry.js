@@ -529,6 +529,7 @@ export class PageTarget {
       helper.addProgressListener(tab.linkedBrowser, navigationListener, Ci.nsIWebProgress.NOTIFY_LOCATION),
       helper.addEventListener(this._linkedBrowser, 'DOMModalDialogClosed', event => this._updateModalDialogs()),
       helper.addEventListener(this._linkedBrowser, 'WillChangeBrowserRemoteness', event => this._willChangeBrowserRemoteness()),
+      helper.addEventListener(this._linkedBrowser, 'DidChangeBrowserRemoteness', event => this._didChangeBrowserRemoteness()),
     ];
 
     this._disposed = false;
@@ -589,6 +590,15 @@ export class PageTarget {
 
   _willChangeBrowserRemoteness() {
     this.removeActor(this._actor);
+  }
+
+  _didChangeBrowserRemoteness() {
+    // The top-level browsing context might have been replaced, e.g. by a cross-origin-opener-policy
+    // navigation, and CanonicalBrowsingContext::ReplacedBy() does not carry emulation overrides
+    // over to the new context. This event is dispatched synchronously during the process switch,
+    // before the load is resumed in the new process, so the re-applied overrides reach the new
+    // document before any of its scripts run.
+    this.updateOverridesForBrowsingContext();
   }
 
   dialog(dialogId) {

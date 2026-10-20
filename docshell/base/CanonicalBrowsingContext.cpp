@@ -316,23 +316,6 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetInnerSizeSpoofedForRFP(GetInnerSizeSpoofedForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
   txn.SetParentalControlsEnabled(GetParentalControlsEnabled());
-  // Playwright: propagate emulation overrides to the replacement context,
-  // e.g. on a cross-origin-opener-policy navigation. Touch events override
-  // is tracked in https://bugzilla.mozilla.org/show_bug.cgi?id=2014330
-  txn.SetPrefersReducedMotionOverride(GetPrefersReducedMotionOverride());
-  txn.SetForcedColorsOverride(GetForcedColorsOverride());
-  txn.SetPrefersColorSchemeOverride(GetPrefersColorSchemeOverride());
-  txn.SetPrefersContrastOverride(GetPrefersContrastOverride());
-  txn.SetMediumOverride(GetMediumOverride());
-  txn.SetOverrideDPPX(GetOverrideDPPX());
-  txn.SetTouchEventsOverrideInternal(GetTouchEventsOverrideInternal());
-  txn.SetInRDMPane(GetInRDMPane());
-  txn.SetHasScreenAreaOverride(GetHasScreenAreaOverride());
-  txn.SetScreenWidthOverride(GetScreenWidthOverride());
-  txn.SetScreenHeightOverride(GetScreenHeightOverride());
-  txn.SetHasOrientationOverride(GetHasOrientationOverride());
-  txn.SetCurrentOrientationType(GetCurrentOrientationType());
-  txn.SetCurrentOrientationAngle(GetCurrentOrientationAngle());
 
   if (!GetLanguageOverride().IsEmpty()) {
     // Reapply language override to update the corresponding realm.
