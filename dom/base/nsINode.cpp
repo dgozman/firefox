@@ -1982,22 +1982,6 @@ void nsINode::GetBoxQuadsFromWindowOrigin(const BoxQuadOptions& aOptions,
   mozilla::GetBoxQuadsFromWindowOrigin(this, aOptions, aResult, aRv);
 }
 
-static nsIFrame* GetFirstFrame(nsINode* aNode) {
-  if (!aNode->IsContent())
-    return nullptr;
-  nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame(FlushType::Frames);
-  if (!frame) {
-    FlattenedChildIterator iter(aNode->AsContent());
-    for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
-      frame = child->GetPrimaryFrame(FlushType::Frames);
-      if (frame) {
-        break;
-      }
-    }
-  }
-  return frame;
-}
-
 void nsINode::ScrollRectIntoViewIfNeeded(int32_t x, int32_t y,
                                          int32_t w, int32_t h,
                                          ErrorResult& aRv) {
@@ -2006,11 +1990,12 @@ void nsINode::ScrollRectIntoViewIfNeeded(int32_t x, int32_t y,
   if (!document) {
     return aRv.ThrowNotFoundError("Node is detached from document");
   }
+  document->FlushPendingNotifications(FlushType::Layout);
   PresShell* presShell = document->GetPresShell();
   if (!presShell) {
     return aRv.ThrowNotFoundError("Node is detached from document");
   }
-  nsIFrame* primaryFrame = GetFirstFrame(this);
+  nsIFrame* primaryFrame = IsContent() ? AsContent()->GetPrimaryFrame() : nullptr;
   if (!primaryFrame) {
     return aRv.ThrowNotFoundError("Node does not have a layout object");
   }
@@ -2029,12 +2014,6 @@ void nsINode::ScrollRectIntoViewIfNeeded(int32_t x, int32_t y,
       AxisScrollParams(WhereToScroll::Center, WhenToScroll::IfNotFullyVisible),
       AxisScrollParams(WhereToScroll::Center, WhenToScroll::IfNotFullyVisible),
       ScrollFlags::ScrollOverflowHidden);
-  // If a _visual_ scroll update is pending, cancel it; otherwise, it will
-  // clobber next scroll (e.g. subsequent window.scrollTo(0, 0) wlll break).
-  if (presShell->GetPendingVisualScrollUpdate()) {
-    presShell->AcknowledgePendingVisualScrollUpdate();
-    presShell->ClearPendingVisualScrollUpdate();
-  }
 }
 
 already_AddRefed<DOMQuad> nsINode::ConvertQuadFromNode(
