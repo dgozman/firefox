@@ -1902,8 +1902,14 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     return nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE_FLAGS;
   }
   *aIsPopupRequested = ShouldOpenPopup(aFeatures);
-  return *aIsPopupRequested ? nsIWebBrowserChrome::CHROME_MINIMAL_POPUP
-                            : nsIWebBrowserChrome::CHROME_ALL;
+  if (!*aIsPopupRequested) {
+    return nsIWebBrowserChrome::CHROME_ALL;
+  }
+  uint32_t chromeFlags = nsIWebBrowserChrome::CHROME_MINIMAL_POPUP;
+  if (aFeatures.Exists("width") || aFeatures.Exists("height")) {
+    chromeFlags |= nsIWebBrowserChrome::JUGGLER_WINDOW_EXPLICIT_SIZE;
+  }
+  return chromeFlags;
 }
 
 /**
