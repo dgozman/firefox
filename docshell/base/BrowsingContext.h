@@ -101,7 +101,6 @@ struct EmbedderColorSchemes {
 // Fields are readable by any process. Racy sets will be resolved as-if they
 // occurred in the order the parent process finds out about them.
 //
-<<<<<<< ours
 // The `DidSet` method may be overloaded. It is called to run code in every
 // process whenever the value is updated. This currently occurs even if the
 // value didn't change, though this may change in the future.
@@ -307,6 +306,9 @@ struct EmbedderColorSchemes {
         {.mCanSet = CanSet::EmbedderOnly})                                     \
   FIELD(DisplayMode, dom::DisplayMode,                                         \
         {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
+  /* playwright addition */                                                   \
+  FIELD(PrefersContrastOverride, dom::PrefersContrastOverride,                \
+        {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
   /* The number of entries added to the session history because of this        \
    * browsing context. */                                                      \
   FIELD(HistoryEntryCount, uint32_t, {.mCanSet = CanSet::Unrestricted})        \
@@ -357,207 +359,6 @@ struct EmbedderColorSchemes {
      Document Picture-in-Picture window */                                     \
   FIELD(ControlsDocumentPiP, bool,                                             \
         {.mTopOnly = true, .mCanSet = CanSet::Custom})
-=======
-// The `DidSet` method may, and the `CanSet` method must, be overloaded to
-// provide different behavior for a specific field.
-//  * `DidSet` is called to run code in every process whenever the value is
-//    updated (This currently occurs even if the value didn't change, though
-//    this may change in the future).
-//  * `CanSet` is called before attempting to set the value, in both the process
-//    which calls `Set`, and the parent process, and will kill the misbehaving
-//    process if it fails.
-#define MOZ_EACH_BC_FIELD(FIELD)                                              \
-  FIELD(Name, nsString)                                                       \
-  FIELD(Closed, bool)                                                         \
-  FIELD(ExplicitActive, ExplicitActiveStatus)                                 \
-  /* Top()-only. If true, new-playing media will be suspended when in an      \
-   * inactive browsing context. */                                            \
-  FIELD(SuspendMediaWhenInactive, bool)                                       \
-  /* If true, we're within the nested event loop in window.open, and this     \
-   * context may not be used as the target of a load */                       \
-  FIELD(PendingInitialization, bool)                                          \
-  /* Indicates if the browser window is active for the purpose of the         \
-   * :-moz-window-inactive pseudoclass. Only read from or set on the          \
-   * top BrowsingContext. */                                                  \
-  FIELD(IsActiveBrowserWindowInternal, bool)                                  \
-  FIELD(OpenerPolicy, nsILoadInfo::CrossOriginOpenerPolicy)                   \
-  /* Current opener for the BrowsingContext. Weak reference */                \
-  FIELD(OpenerId, uint64_t)                                                   \
-  FIELD(OnePermittedSandboxedNavigatorId, uint64_t)                           \
-  FIELD(CurrentInnerWindowId, uint64_t)                                       \
-  FIELD(HadOriginalOpener, bool)                                              \
-  /* Was this window created by a webpage through window.open or an anchor    \
-   * link? In general, windows created this way may be manipulated (e.g.      \
-   * closed, resized or moved) by content JS. */                              \
-  FIELD(TopLevelCreatedByWebContent, bool)                                    \
-  FIELD(IsPopupSpam, bool)                                                    \
-  /* Hold the audio muted state and should be used on top level browsing      \
-   * contexts only */                                                         \
-  FIELD(Muted, bool)                                                          \
-  /* Hold the pinned/app-tab state and should be used on top level browsing   \
-   * contexts only */                                                         \
-  FIELD(IsAppTab, bool)                                                       \
-  /* Whether this is a captive portal tab. Should be used on top level        \
-   * browsing contexts only */                                                \
-  FIELD(IsCaptivePortalTab, bool)                                             \
-  /* Whether there's more than 1 tab / toplevel browsing context in this      \
-   * parent window. Used to determine if a given BC is allowed to resize      \
-   * and/or move the window or not. */                                        \
-  FIELD(HasSiblings, bool)                                                    \
-  /* Indicate that whether we should delay media playback, which would only   \
-     be done on an unvisited tab. And this should only be used on the top     \
-     level browsing contexts */                                               \
-  FIELD(ShouldDelayMediaFromStart, bool)                                      \
-  /* See nsSandboxFlags.h for the possible flags. */                          \
-  FIELD(SandboxFlags, uint32_t)                                               \
-  /* The value of SandboxFlags when the BrowsingContext is first created.     \
-   * Used for sandboxing the initial about:blank document. */                 \
-  FIELD(InitialSandboxFlags, uint32_t)                                        \
-  /* A non-zero unique identifier for the browser element that is hosting     \
-   * this                                                                     \
-   * BrowsingContext tree. Every BrowsingContext in the element's tree will   \
-   * return the same ID in all processes and it will remain stable            \
-   * regardless of process changes. When a browser element's frameloader is   \
-   * switched to another browser element this ID will remain the same but     \
-   * hosted under the under the new browser element. */                       \
-  FIELD(BrowserId, uint64_t)                                                  \
-  FIELD(HistoryID, nsID)                                                      \
-  FIELD(InRDMPane, bool)                                                      \
-  FIELD(Loading, bool)                                                        \
-  /* A field only set on top browsing contexts, which indicates that either:  \
-   *                                                                          \
-   *  * This is a browsing context created explicitly for printing or print   \
-   *    preview (thus hosting static documents).                              \
-   *                                                                          \
-   *  * This is a browsing context where something in this tree is calling    \
-   *    window.print() (and thus showing a modal dialog).                     \
-   *                                                                          \
-   * We use it exclusively to block navigation for both of these cases. */    \
-  FIELD(IsPrinting, bool)                                                     \
-  FIELD(AncestorLoading, bool)                                                \
-  FIELD(AllowContentRetargeting, bool)                                        \
-  FIELD(AllowContentRetargetingOnChildren, bool)                              \
-  FIELD(ForceEnableTrackingProtection, bool)                                  \
-  FIELD(UseGlobalHistory, bool)                                               \
-  FIELD(TargetTopLevelLinkClicksToBlankInternal, bool)                        \
-  FIELD(FullscreenAllowedByOwner, bool)                                       \
-  FIELD(ForceDesktopViewport, bool)                                           \
-  /*                                                                          \
-   * "is popup" in the spec.                                                  \
-   * Set only on top browsing contexts.                                       \
-   * This doesn't indicate whether this is actually a popup or not,           \
-   * but whether this browsing context is created by requesting popup or not. \
-   * See also: nsWindowWatcher::ShouldOpenPopup.                              \
-   */                                                                         \
-  FIELD(IsPopupRequested, bool)                                               \
-  /* These field are used to store the states of autoplay media request on    \
-   * GeckoView only, and it would only be modified on the top level browsing  \
-   * context. */                                                              \
-  FIELD(GVAudibleAutoplayRequestStatus, GVAutoplayRequestStatus)              \
-  FIELD(GVInaudibleAutoplayRequestStatus, GVAutoplayRequestStatus)            \
-  FIELD(ScreenHeightOverride, uint64_t)                                       \
-  FIELD(ScreenWidthOverride, uint64_t)                                        \
-  FIELD(HasScreenAreaOverride, bool)                                          \
-  /* ScreenOrientation-related APIs */                                        \
-  FIELD(CurrentOrientationAngle, float)                                       \
-  FIELD(CurrentOrientationType, mozilla::dom::OrientationType)                \
-  FIELD(OrientationLock, mozilla::hal::ScreenOrientation)                     \
-  FIELD(HasOrientationOverride, bool)                                         \
-  FIELD(UserAgentOverride, nsCString)                                         \
-  FIELD(TouchEventsOverrideInternal, mozilla::dom::TouchEventsOverride)       \
-  FIELD(EmbedderElementType, Maybe<nsString>)                                 \
-  FIELD(MessageManagerGroup, nsString)                                        \
-  FIELD(MaxTouchPointsOverride, uint8_t)                                      \
-  FIELD(FullZoom, float)                                                      \
-  FIELD(WatchedByDevToolsInternal, bool)                                      \
-  FIELD(TextZoom, float)                                                      \
-  FIELD(OverrideDPPX, float)                                                  \
-  /* The current in-progress load. */                                         \
-  FIELD(CurrentLoadIdentifier, Maybe<uint64_t>)                               \
-  /* The android load identifier. Used to map to applink type */              \
-  FIELD(AndroidAppLinkLoadIdentifier, Maybe<uint64_t>)                        \
-  /* See nsIRequest for possible flags. */                                    \
-  FIELD(DefaultLoadFlags, uint32_t)                                           \
-  /* Signals that session history is enabled for this browsing context tree.  \
-   * This is only ever set to true on the top BC, so consumers need to get    \
-   * the value from the top BC! */                                            \
-  FIELD(HasSessionHistory, bool)                                              \
-  FIELD(UseErrorPages, bool)                                                  \
-  FIELD(PlatformOverride, nsString)                                           \
-  /* Specifies if this BC has loaded documents besides the initial            \
-   * about:blank document. about:privatebrowsing, about:home, about:newtab    \
-   * and non-initial about:blank are not considered to be initial             \
-   * documents. */                                                            \
-  FIELD(HasLoadedNonInitialDocument, bool)                                    \
-  /* Default value for nsIDocumentViewer::authorStyleDisabled in any new      \
-   * browsing contexts created as a descendant of this one.  Valid only for   \
-   * top BCs. */                                                              \
-  FIELD(AuthorStyleDisabledDefault, bool)                                     \
-  FIELD(ServiceWorkersTestingEnabled, bool)                                   \
-  FIELD(ServiceWorkersDisabledByPolicy, bool)                                 \
-  FIELD(MediumOverride, nsString)                                             \
-  /* DevTools override for prefers-color-scheme */                            \
-  FIELD(PrefersColorSchemeOverride, dom::PrefersColorSchemeOverride)          \
-  FIELD(LanguageOverride, nsCString)                                          \
-  FIELD(TimezoneOverride, nsString)                                           \
-  /* DevTools override for prefers-reduced-motion */                          \
-  FIELD(PrefersReducedMotionOverride, dom::PrefersReducedMotionOverride)      \
-  /* DevTools override for forced-colors */                                   \
-  FIELD(ForcedColorsOverride, dom::ForcedColorsOverride)                      \
-  /* DevTools multiplier for animations playback rate */                      \
-  FIELD(AnimationsPlayBackRateMultiplier, double)                             \
-  /* prefers-color-scheme override based on the color-scheme style of our     \
-   * <browser> embedder element. */                                           \
-  FIELD(EmbedderColorSchemes, EmbedderColorSchemes)                           \
-  /* Content-area scrollbar insets forwarded from the <browser> embedder's    \
-   * -moz-scrollbar-inset-{block,inline}, so the top-level content viewport   \
-   * scrollbars clear the rounded content-area corners. */                    \
-  FIELD(EmbedderScrollbarInset, LayoutDeviceIntMargin)                        \
-  FIELD(DisplayMode, dom::DisplayMode)                                        \
-  /* playwright addition */                                                   \
-  FIELD(PrefersContrastOverride, dom::PrefersContrastOverride)                \
-  /* The number of entries added to the session history because of this       \
-   * browsing context. */                                                     \
-  FIELD(HistoryEntryCount, uint32_t)                                          \
-  FIELD(HasRestoreData, bool)                                                 \
-  FIELD(SessionStoreEpoch, uint32_t)                                          \
-  /* Whether we can execute scripts in this BrowsingContext. Has no effect    \
-   * unless scripts are also allowed in the parent WindowContext. */          \
-  FIELD(AllowJavascript, bool)                                                \
-  /* The count of request that are used to prevent the browsing context tree  \
-   * from being suspended, which would ONLY be modified on the top level      \
-   * context in the chrome process because that's a non-atomic counter */     \
-  FIELD(PageAwakeRequestCount, uint32_t)                                      \
-  /* This field only gets incrememented when we start navigations in the      \
-   * parent process. This is used for keeping track of the racing navigations \
-   * between the parent and content processes. */                             \
-  FIELD(ParentInitiatedNavigationEpoch, uint64_t)                             \
-  /* This browsing context is for a synthetic image document wrapping an      \
-   * image embedded in <object> or <embed>. */                                \
-  FIELD(IsSyntheticDocumentContainer, bool)                                   \
-  /* If true, this document is embedded within a content document,  either    \
-   * loaded in the parent (e.g. about:addons or the devtools toolbox), or in  \
-   * a content process. */                                                    \
-  FIELD(EmbeddedInContentDocument, bool)                                      \
-  /* If true, this browsing context is within a hidden embedded document. */  \
-  FIELD(IsUnderHiddenEmbedderElement, bool)                                   \
-  /* If true, this browsing context is offline */                             \
-  FIELD(ForceOffline, bool)                                                   \
-  /* Used to propagate window.top's inner size for RFPTarget::Window*         \
-   * protections */                                                           \
-  FIELD(InnerSizeSpoofedForRFP, CSSIntSize)                                   \
-  /* Used to propagate document's IPAddressSpace  */                          \
-  FIELD(IPAddressSpace, nsILoadInfo::IPAddressSpace)                          \
-  /* This is true if we should redirect to an error page when inserting *     \
-   * meta tags flagging adult content into our documents */                   \
-  FIELD(ParentalControlsEnabled, bool)                                        \
-  /* If true, this traversable is a Document Picture-in-Picture and           \
-     is subject to certain restrictions */                                    \
-  FIELD(IsDocumentPiP, bool)                                                  \
-  /* True if this is a content browsing context whose page has an open        \
-     Document Picture-in-Picture window */                                    \
-  FIELD(ControlsDocumentPiP, bool)
->>>>>>> theirs
 
 #define NS_DOM_BROWSINGCONTEXT_IID \
   {0x5059a6aa, 0xf09, 0x415c, {0x89, 0xbd, 0x63, 0xfd, 0xe5, 0xab, 0x1a, 0x66}};
@@ -1580,69 +1381,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_OpenerPolicy>,
               nsILoadInfo::CrossOriginOpenerPolicy, ContentParent*);
 
-<<<<<<< ours
-=======
-  bool CanSet(FieldIndex<IDX_ServiceWorkersTestingEnabled>, bool,
-              ContentParent* aSource) {
-    return XRE_IsParentProcess() && !aSource && IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_ServiceWorkersDisabledByPolicy>, bool,
-              ContentParent* aSource) {
-    return XRE_IsParentProcess() && !aSource && IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_LanguageOverride>, const nsCString&,
-              ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_TimezoneOverride>, const nsString&,
-              ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_MediumOverride>, const nsString&, ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_EmbedderColorSchemes>, const EmbedderColorSchemes&,
-              ContentParent* aSource) {
-    return CheckOnlyEmbedderCanSet(aSource);
-  }
-
-  bool CanSet(FieldIndex<IDX_EmbedderScrollbarInset>,
-              const LayoutDeviceIntMargin&, ContentParent* aSource) {
-    return CheckOnlyEmbedderCanSet(aSource);
-  }
-
-  bool CanSet(FieldIndex<IDX_PrefersColorSchemeOverride>,
-              dom::PrefersColorSchemeOverride, ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_PrefersContrastOverride>,
-              dom::PrefersContrastOverride, ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_ForcedColorsOverride>, dom::ForcedColorsOverride,
-              ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
-              dom::PrefersReducedMotionOverride, ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>, double&,
-              ContentParent*) {
-    return IsTop();
-  }
-
-  bool CanSet(FieldIndex<IDX_InRDMPane>, const bool&, ContentParent* aSource);
->>>>>>> theirs
   void DidSet(FieldIndex<IDX_InRDMPane>, bool aOldValue);
   void DidSet(FieldIndex<IDX_HasOrientationOverride>, bool aOldValue);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DidSet(FieldIndex<IDX_ForceDesktopViewport>,
