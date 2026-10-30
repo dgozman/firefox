@@ -2200,6 +2200,12 @@ void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
     (void)SetIsCaptivePortalTab(true);
   }
 
+  {
+    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(ToSupports(this), "juggler-navigation-started-browser", NS_ConvertASCIItoUTF16(nsPrintfCString("%" PRIu64, loadState->GetLoadIdentifier())).get());
+    }
+  }
   LoadURI(loadState, true);
 }
 

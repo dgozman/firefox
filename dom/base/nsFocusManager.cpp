@@ -1892,6 +1892,10 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
         (GetActiveBrowsingContext() == newRootBrowsingContext);
   }
 
+  // In Playwright, we want to send focus events even if the element
+  // isn't actually in the active window.
+  isElementInActiveWindow = true;
+
   // Exit fullscreen if a website focuses another window
   if (StaticPrefs::full_screen_api_exit_on_windowRaise() &&
       !isElementInActiveWindow && (aFlags & FLAG_RAISE)) {
@@ -2453,6 +2457,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
                               bool aIsLeavingDocument, bool aAdjustWidget,
                               bool aRemainActive, Element* aElementToFocus,
                               uint64_t aActionId) {
+
   LOGFOCUS(("<<Blur begin actionid: %" PRIu64 ">>", aActionId));
 
   // hold a reference to the focused content, which may be null
@@ -2493,6 +2498,13 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     // preview.
     SetFocusedBrowsingContext(nullptr, aActionId);
     mFocusedElement = nullptr;
+    return true;
+  }
+
+  // Playwright: suppress external blurs, but allow focus to move between frames.
+  if (XRE_IsContentProcess() && aIsLeavingDocument &&
+      !aBrowsingContextToClear && !aAncestorBrowsingContextToFocus &&
+      nsDocShell::Cast(docShell)->ShouldOverrideHasFocus()) {
     return true;
   }
 
@@ -2677,7 +2689,11 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     }
 
     // check if a different window was focused
-    result = (!GetFocusedBrowsingContext() && GetActiveBrowsingContext());
+    // Playwright's emulated active window may still be natively inactive.
+    result = !GetFocusedBrowsingContext() &&
+             (GetActiveBrowsingContext() ||
+              (XRE_IsContentProcess() &&
+               nsDocShell::Cast(docShell)->ShouldOverrideHasFocus()));
   } else if (GetActiveBrowsingContext()) {
     // Otherwise, the blur of the element without blurring the document
     // occurred normally. Call UpdateCaret to redisplay the caret at the right
@@ -3266,7 +3282,9 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
     }
   }
 
-  if (sTestMode) {
+  // In Playwright, we still want to execte the embedder functions
+  // to actually show / focus windows.
+  if (false && sTestMode) {
     // In test mode, emulate raising the window. WindowRaised takes
     // care of lowering the present active window. This happens in
     // a separate runnable to avoid touching multiple windows in

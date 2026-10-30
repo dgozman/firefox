@@ -122,8 +122,11 @@ struct ParamTraits<mozilla::dom::DisplayMode>
 
 template <>
 struct ParamTraits<mozilla::dom::PrefersColorSchemeOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<
-          mozilla::dom::PrefersColorSchemeOverride> {};
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersColorSchemeOverride> {};
+
+template <>
+struct ParamTraits<mozilla::dom::PrefersContrastOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersContrastOverride> {};
 
 template <>
 struct ParamTraits<mozilla::dom::ForcedColorsOverride>
@@ -509,6 +512,72 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
       // Ensure our opener policy is consistent for printing for our top.
       fields.Get<IDX_OpenerPolicy>() = topPolicy;
     }
+<<<<<<< ours
+=======
+  } else if (!aParent && group->IsPotentiallyCrossOriginIsolated()) {
+    // If we're creating a brand-new toplevel BC in a potentially cross-origin
+    // isolated group, it should start out with a strict opener policy.
+    fields.Get<IDX_OpenerPolicy>() =
+        nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
+  }
+
+  fields.Get<IDX_HistoryID>() = nsID::GenerateUUID();
+  fields.Get<IDX_ExplicitActive>() = [&] {
+    if (parentBC || aType == Type::Content) {
+      // Non-root browsing-contexts inherit their status from its parent.
+      // Top-content either gets managed by the top chrome, or gets manually
+      // managed by the front-end (see ManuallyManagesActiveness). In any case
+      // we want to start off as inactive.
+      return ExplicitActiveStatus::None;
+    }
+    // Chrome starts as active.
+    return ExplicitActiveStatus::Active;
+  }();
+
+  fields.Get<IDX_FullZoom>() = parentBC ? parentBC->FullZoom() : 1.0f;
+  fields.Get<IDX_TextZoom>() = parentBC ? parentBC->TextZoom() : 1.0f;
+
+  bool allowContentRetargeting =
+      inherit ? inherit->GetAllowContentRetargetingOnChildren() : true;
+  fields.Get<IDX_AllowContentRetargeting>() = allowContentRetargeting;
+  fields.Get<IDX_AllowContentRetargetingOnChildren>() = allowContentRetargeting;
+
+  // Assume top allows fullscreen for its children unless otherwise stated.
+  // Subframes start with it false unless otherwise noted in SetEmbedderElement.
+  fields.Get<IDX_FullscreenAllowedByOwner>() = !aParent;
+
+  fields.Get<IDX_DefaultLoadFlags>() =
+      inherit ? inherit->GetDefaultLoadFlags() : nsIRequest::LOAD_NORMAL;
+
+  fields.Get<IDX_OrientationLock>() = mozilla::hal::ScreenOrientation::None;
+
+  fields.Get<IDX_UseGlobalHistory>() =
+      inherit ? inherit->GetUseGlobalHistory() : false;
+
+  fields.Get<IDX_UseErrorPages>() = true;
+
+  // Playwright: make sure touch events override is propagated to the nested
+  // browsing context. See https://bugzilla.mozilla.org/show_bug.cgi?id=2014330
+  fields.Get<IDX_TouchEventsOverrideInternal>() =
+      inherit ? inherit->GetTouchEventsOverrideInternal() :
+      TouchEventsOverride::None;
+
+  fields.Get<IDX_AllowJavascript>() =
+      inherit ? inherit->GetAllowJavascript() : true;
+
+  fields.Get<IDX_IPAddressSpace>() = inherit
+                                         ? inherit->GetIPAddressSpace()
+                                         : nsILoadInfo::IPAddressSpace::Unknown;
+
+  bool parentalControlsEnabled;
+  if (inherit) {
+    parentalControlsEnabled = inherit->GetParentalControlsEnabled();
+  } else if (XRE_IsParentProcess()) {
+    parentalControlsEnabled =
+        CanonicalBrowsingContext::ShouldEnforceParentalControls();
+  } else {
+    parentalControlsEnabled = false;
+>>>>>>> theirs
   }
 
   if (aOptions.isForPrinting && !parentBC) {
@@ -3615,6 +3684,15 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
   });
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+                             dom::PrefersContrastOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersContrastOverride() == aOldValue) {
+    return;
+  }
+  PresContextAffectingFieldChanged();
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -3873,7 +3951,7 @@ void BrowsingContext::SetGeolocationServiceOverride(
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
       mGeolocationServiceOverride = MakeRefPtr<GeolocationService>();
-      mGeolocationServiceOverride->Init();
+      mGeolocationServiceOverride->Init(true /* isOverride */);
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
   } else if (RefPtr<GeolocationService> serviceOverride =
