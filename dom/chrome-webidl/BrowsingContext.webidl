@@ -73,7 +73,11 @@ enum PrefersReducedMotionOverride {
 };
 
 /**
+<<<<<<< ours
  * CSS prefers-contrast values override.
+=======
+ * CSS prefers-contrast values.
+>>>>>>> theirs
  */
 enum PrefersContrastOverride {
   "none",
@@ -271,6 +275,9 @@ interface BrowsingContext {
 
   // Animation playbackRate multiplier, for Devtools
   [SetterThrows] attribute double animationsPlayBackRateMultiplier;
+
+  // Contrast simulation, for DevTools.
+  [SetterThrows] attribute PrefersContrastOverride prefersContrastOverride;
 
   /**
    * A unique identifier for the browser element that is hosting this

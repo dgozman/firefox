@@ -356,6 +356,9 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowDNSPrefetch(true),
       mAllowWindowControl(true),
       mCSSErrorReportingEnabled(false),
+      mOverrideHasFocus(false),
+      mBypassCSPEnabled(false),
+      mForceActiveState(false),
       mAllowAuth(mItemType == typeContent),
       mAllowKeywordFixup(false),
       mDisableMetaRefreshWhenInactive(false),
@@ -3129,6 +3132,65 @@ nsDocShell::GetMessageManager(ContentFrameMessageManager** aMessageManager) {
   return NS_OK;
 }
 
+// =============== Juggler Begin =======================
+
+nsDocShell* nsDocShell::GetRootDocShell() {
+  nsCOMPtr<nsIDocShellTreeItem> rootAsItem;
+  GetInProcessSameTypeRootTreeItem(getter_AddRefs(rootAsItem));
+  nsCOMPtr<nsIDocShell> rootShell = do_QueryInterface(rootAsItem);
+  return nsDocShell::Cast(rootShell);
+}
+
+NS_IMETHODIMP
+nsDocShell::GetBypassCSPEnabled(bool* aEnabled) {
+  MOZ_ASSERT(aEnabled);
+  *aEnabled = mBypassCSPEnabled;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetBypassCSPEnabled(bool aEnabled) {
+  mBypassCSPEnabled = aEnabled;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::GetForceActiveState(bool* aEnabled) {
+  MOZ_ASSERT(aEnabled);
+  *aEnabled = mForceActiveState;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetForceActiveState(bool aEnabled) {
+  mForceActiveState = aEnabled;
+  ActivenessMaybeChanged();
+  return NS_OK;
+}
+
+bool nsDocShell::IsBypassCSPEnabled() {
+  return GetRootDocShell()->mBypassCSPEnabled;
+}
+
+NS_IMETHODIMP
+nsDocShell::GetOverrideHasFocus(bool* aEnabled) {
+  MOZ_ASSERT(aEnabled);
+  *aEnabled = mOverrideHasFocus;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetOverrideHasFocus(bool aEnabled) {
+  mOverrideHasFocus = aEnabled;
+  return NS_OK;
+}
+
+bool nsDocShell::ShouldOverrideHasFocus() {
+  return GetRootDocShell()->mOverrideHasFocus;
+}
+
+// =============== Juggler End =======================
+
 NS_IMETHODIMP
 nsDocShell::GetIsNavigating(bool* aOut) {
   *aOut = mIsNavigating;
@@ -4882,7 +4944,7 @@ nsDocShell::GetVisibility(bool* aVisibility) {
 }
 
 void nsDocShell::ActivenessMaybeChanged() {
-  const bool isActive = mBrowsingContext->IsActive();
+  const bool isActive = mForceActiveState || mBrowsingContext->IsActive();
   if (RefPtr<PresShell> presShell = GetPresShell()) {
     presShell->ActivenessMaybeChanged();
   }
@@ -9220,6 +9282,16 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   attrs.SetFirstPartyDomain(isTopLevelDoc, aLoadState->URI());
 
   nsCOMPtr<nsIRequest> req;
+
+  // Juggler: report navigation started for non-same-document and non-javascript
+  // navigations.
+  if (!isJavaScript && !sameDocument) {
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(GetAsSupports(this), "juggler-navigation-started-renderer", NS_ConvertASCIItoUTF16(nsPrintfCString("%" PRIu64, aLoadState->GetLoadIdentifier())).get());
+    }
+  }
   rv = DoURILoad(aLoadState, aCacheKey, getter_AddRefs(req));
 
   if (NS_SUCCEEDED(rv)) {
@@ -12348,6 +12420,9 @@ class OnLinkClickEvent : public CancelableRunnable, public SupportsWeakPtr {
       mHandler->OnLinkClickSync(mContent, mLoadState, mNoOpenerImplied,
                                 mTriggeringPrincipal);
     }
+    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+    observerService->NotifyObservers(ToSupports(mContent), "juggler-link-click-sync", nullptr);
+
     return NS_OK;
   }
 
@@ -12389,6 +12464,7 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     return OnLinkClickSync(aForm, aLoadState, false, aForm->NodePrincipal());
   }
 
+<<<<<<< ours
   // Determine BC to target synchronously, for consistency with other browsers
   ComputeNamedTargetBrowsingContext(aLoadState);
 
@@ -12402,6 +12478,17 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
   if ((targetBC.IsNull() || targetBC == formDocument->GetBrowsingContext()) &&
       !formDocument->IsCompletelyLoaded()) {
     aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
+=======
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  observerService->NotifyObservers(ToSupports(aForm), "juggler-link-click",
+                                   nullptr);
+
+  auto result = OnLinkClickWithLoadState(aForm, aLoadState, false,
+                                         aForm->NodePrincipal());
+  if (result.isErr()) {
+    return result.unwrapErr();
+>>>>>>> theirs
   }
 
   RefPtr ev = MakeRefPtr<OnLinkClickEvent>(this, aForm, aLoadState, false,
@@ -12541,6 +12628,7 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
+<<<<<<< ours
   ComputeNamedTargetBrowsingContext(loadState);
 
   RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
@@ -12560,6 +12648,13 @@ nsresult nsDocShell::OnLinkClick(
 
   RefPtr<nsIRunnable> runnable = ev;
   return Dispatch(runnable.forget());
+=======
+  nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+  observerService->NotifyObservers(ToSupports(aContent), "juggler-link-click", nullptr);
+  auto result = OnLinkClickWithLoadState(aContent, loadState, noOpenerImplied,
+                                         aTriggeringPrincipal);
+  return result.isErr() ? result.unwrapErr() : NS_OK;
+>>>>>>> theirs
 }
 
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,

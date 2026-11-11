@@ -10465,6 +10465,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
   EventMessage msg;
   Maybe<WidgetMouseEvent::ExitFrom> exitFrom;
   bool contextMenuKey = false;
+  bool isPWDragEventMessage = false;
   if (aType.EqualsLiteral("mousedown")) {
     msg = eMouseDown;
   } else if (aType.EqualsLiteral("mouseup")) {
@@ -10489,6 +10490,17 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
         aMouseEventData.mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
   } else if (aType.EqualsLiteral("MozMouseHittest")) {
     msg = eMouseHitTest;
+<<<<<<< ours
+=======
+  } else if (aType.EqualsLiteral("MozMouseExploreByTouch")) {
+    msg = eMouseExploreByTouch;
+  } else if (aType.EqualsLiteral("dragover")) {
+    msg = eDragOver;
+    isPWDragEventMessage = true;
+  } else if (aType.EqualsLiteral("drop")) {
+    msg = eDrop;
+    isPWDragEventMessage = true;
+>>>>>>> theirs
   } else {
     return Err(NS_ERROR_FAILURE);
   }
@@ -10500,7 +10512,14 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
 
   Maybe<WidgetPointerEvent> pointerEvent;
   Maybe<WidgetMouseEvent> mouseEvent;
-  if (IsPointerEventMessage(msg)) {
+  Maybe<WidgetDragEvent> pwDragEvent;
+
+  if (isPWDragEventMessage) {
+    pwDragEvent.emplace(true, msg, aWidget);
+    pwDragEvent->mReason = aOptions.mIsWidgetEventSynthesized
+                             ? WidgetMouseEvent::eSynthesized
+                             : WidgetMouseEvent::eReal;
+  } else if (IsPointerEventMessage(msg)) {
     if (MOZ_UNLIKELY(aOptions.mIsWidgetEventSynthesized)) {
       MOZ_ASSERT_UNREACHABLE(
           "The event shouldn't be dispatched as a synthesized event");
@@ -10528,6 +10547,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
   mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(callback);
 
   WidgetMouseEvent& mouseOrPointerEvent =
+      pwDragEvent.isSome() ? pwDragEvent.ref() :
       pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   mouseOrPointerEvent.pointerId = aMouseEventData.mIdentifier;
   mouseOrPointerEvent.mModifiers =

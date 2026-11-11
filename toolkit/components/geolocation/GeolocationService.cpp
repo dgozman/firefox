@@ -57,11 +57,17 @@ nsresult GeolocationService::Init(bool aIsOverride) {
     return NS_ERROR_FAILURE;
   }
 
+<<<<<<< ours
   mIsOverride = aIsOverride;
   if (mIsOverride) {
     // Positions come from SetGeolocationServiceOverride, so there is no
     // platform provider to set up.
     return NS_OK;
+=======
+  if (aIsOverride) {
+    mIsOverride = true;
+    mHigherAccuracy = true;
+>>>>>>> theirs
   }
 
   if (XRE_IsContentProcess()) {

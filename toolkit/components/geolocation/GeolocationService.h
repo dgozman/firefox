@@ -43,10 +43,13 @@ class GeolocationService final : public nsIGeolocationService,
   GeolocationService() = default;
 
   nsresult Init(bool aIsOverride = false);
+<<<<<<< ours
 
   // Whether this service was created by
   // BrowsingContext::SetGeolocationServiceOverride.
   bool IsOverride() const { return mIsOverride; }
+=======
+>>>>>>> theirs
 
   // Management of the Geolocation objects
   void AddLocator(mozilla::dom::Geolocation* aLocator);
@@ -70,6 +73,7 @@ class GeolocationService final : public nsIGeolocationService,
   // Update the accuracy and notify the provider if changed
   void UpdateAccuracy(bool aForceHigh = false);
   bool HighAccuracyRequested();
+  bool IsOverride() const { return mIsOverride; }
 
  private:
   ~GeolocationService();

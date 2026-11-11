@@ -309,6 +309,9 @@ struct EmbedderColorSchemes {
         {.mCanSet = CanSet::EmbedderOnly})                                     \
   FIELD(DisplayMode, dom::DisplayMode,                                         \
         {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
+  /* playwright addition */                                                   \
+  FIELD(PrefersContrastOverride, dom::PrefersContrastOverride,                \
+        {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
   /* The number of entries added to the session history because of this        \
    * browsing context. */                                                      \
   FIELD(HistoryEntryCount, uint32_t, {.mCanSet = CanSet::Unrestricted})        \
@@ -1190,6 +1193,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return Top()->GetAnimationsPlayBackRateMultiplier();
   }
 
+  dom::PrefersContrastOverride PrefersContrastOverride() const {
+    return GetPrefersContrastOverride();
+  }
+
   bool IsInBFCache() const;
   bool IsEnteringBFCache() const { return mIsEnteringBFCache; }
   // aForUnload means that the old document unloads instead of entering BFCache.
@@ -1410,6 +1417,14 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
               double aOldValue);
 
+<<<<<<< ours
+=======
+  void DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+              dom::PrefersContrastOverride aOldValue);
+
+  template <typename Callback>
+  void WalkPresContexts(Callback&&);
+>>>>>>> theirs
   void PresContextAffectingFieldChanged();
 
   void DidSet(FieldIndex<IDX_LanguageOverride>, nsCString&& aOldValue);

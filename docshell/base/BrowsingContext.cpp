@@ -122,8 +122,11 @@ struct ParamTraits<mozilla::dom::DisplayMode>
 
 template <>
 struct ParamTraits<mozilla::dom::PrefersColorSchemeOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<
-          mozilla::dom::PrefersColorSchemeOverride> {};
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersColorSchemeOverride> {};
+
+template <>
+struct ParamTraits<mozilla::dom::PrefersContrastOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersContrastOverride> {};
 
 template <>
 struct ParamTraits<mozilla::dom::ForcedColorsOverride>
@@ -373,6 +376,10 @@ BrowsingContext::FieldValues BrowsingContext::ComputeInitialFields(
     fields.Get<IDX_DefaultLoadFlags>() = inherit->GetDefaultLoadFlags();
     fields.Get<IDX_UseGlobalHistory>() = inherit->GetUseGlobalHistory();
     fields.Get<IDX_AllowJavascript>() = inherit->GetAllowJavascript();
+    // Playwright: make sure touch events override is propagated to the nested
+    // browsing context. See https://bugzilla.mozilla.org/show_bug.cgi?id=2014330
+    fields.Get<IDX_TouchEventsOverrideInternal>() =
+        inherit->GetTouchEventsOverrideInternal();
     fields.Get<IDX_IPAddressSpace>() = inherit->GetIPAddressSpace();
     fields.Get<IDX_ParentalControlsEnabled>() =
         inherit->GetParentalControlsEnabled();
@@ -3646,6 +3653,19 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
   });
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+                             dom::PrefersContrastOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersContrastOverride() == aOldValue) {
+    return;
+  }
+  WalkPresContexts([&](nsPresContext* aPc) {
+    aPc->MediaFeatureValuesChanged(
+        {MediaFeatureChangeReason::PreferenceChange},
+        MediaFeatureChangePropagation::JustThisDocument);
+  });
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -3896,7 +3916,11 @@ void BrowsingContext::SetGeolocationServiceOverride(
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
       mGeolocationServiceOverride = MakeRefPtr<GeolocationService>();
+<<<<<<< ours
       mGeolocationServiceOverride->Init(/* aIsOverride = */ true);
+=======
+      mGeolocationServiceOverride->Init(true /* isOverride */);
+>>>>>>> theirs
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
   } else if (RefPtr<GeolocationService> serviceOverride =

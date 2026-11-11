@@ -673,7 +673,10 @@ void StartupCache::CountAllowedInvalidation() { mAllowedInvalidationsCount++; }
 void StartupCache::MaybeKickOffInitialWrite() {
   if (gWantInitialWrite) {
     gWantInitialWrite = false;
-    MaybeWriteOffMainThread(WriteType::InitialWrite);
+    // As during shutdown, throttling a write holding mTableLock can starve
+    // main-thread GetBuffer() calls while startup tasks are still loading.
+    MaybeWriteOffMainThread(WriteType::InitialWrite,
+                           /* aUseLowPriorityIO */ false);
   }
 }
 
