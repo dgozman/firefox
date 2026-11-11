@@ -12464,7 +12464,11 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     return OnLinkClickSync(aForm, aLoadState, false, aForm->NodePrincipal());
   }
 
-<<<<<<< ours
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  observerService->NotifyObservers(ToSupports(aForm), "juggler-link-click",
+                                   nullptr);
+
   // Determine BC to target synchronously, for consistency with other browsers
   ComputeNamedTargetBrowsingContext(aLoadState);
 
@@ -12478,17 +12482,6 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
   if ((targetBC.IsNull() || targetBC == formDocument->GetBrowsingContext()) &&
       !formDocument->IsCompletelyLoaded()) {
     aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
-=======
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  observerService->NotifyObservers(ToSupports(aForm), "juggler-link-click",
-                                   nullptr);
-
-  auto result = OnLinkClickWithLoadState(aForm, aLoadState, false,
-                                         aForm->NodePrincipal());
-  if (result.isErr()) {
-    return result.unwrapErr();
->>>>>>> theirs
   }
 
   RefPtr ev = MakeRefPtr<OnLinkClickEvent>(this, aForm, aLoadState, false,
@@ -12628,7 +12621,9 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
-<<<<<<< ours
+  nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+  observerService->NotifyObservers(ToSupports(aContent), "juggler-link-click", nullptr);
+
   ComputeNamedTargetBrowsingContext(loadState);
 
   RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
@@ -12648,13 +12643,6 @@ nsresult nsDocShell::OnLinkClick(
 
   RefPtr<nsIRunnable> runnable = ev;
   return Dispatch(runnable.forget());
-=======
-  nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-  observerService->NotifyObservers(ToSupports(aContent), "juggler-link-click", nullptr);
-  auto result = OnLinkClickWithLoadState(aContent, loadState, noOpenerImplied,
-                                         aTriggeringPrincipal);
-  return result.isErr() ? result.unwrapErr() : NS_OK;
->>>>>>> theirs
 }
 
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,

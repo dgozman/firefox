@@ -122,11 +122,8 @@ struct ParamTraits<mozilla::dom::DisplayMode>
 
 template <>
 struct ParamTraits<mozilla::dom::PrefersColorSchemeOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersColorSchemeOverride> {};
-
-template <>
-struct ParamTraits<mozilla::dom::PrefersContrastOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PrefersContrastOverride> {};
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::PrefersColorSchemeOverride> {};
 
 template <>
 struct ParamTraits<mozilla::dom::ForcedColorsOverride>
@@ -3653,19 +3650,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
   });
 }
 
-void BrowsingContext::DidSet(FieldIndex<IDX_PrefersContrastOverride>,
-                             dom::PrefersContrastOverride aOldValue) {
-  MOZ_ASSERT(IsTop());
-  if (PrefersContrastOverride() == aOldValue) {
-    return;
-  }
-  WalkPresContexts([&](nsPresContext* aPc) {
-    aPc->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::PreferenceChange},
-        MediaFeatureChangePropagation::JustThisDocument);
-  });
-}
-
 void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -3916,11 +3900,7 @@ void BrowsingContext::SetGeolocationServiceOverride(
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
       mGeolocationServiceOverride = MakeRefPtr<GeolocationService>();
-<<<<<<< ours
       mGeolocationServiceOverride->Init(/* aIsOverride = */ true);
-=======
-      mGeolocationServiceOverride->Init(true /* isOverride */);
->>>>>>> theirs
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
   } else if (RefPtr<GeolocationService> serviceOverride =

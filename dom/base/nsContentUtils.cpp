@@ -10490,17 +10490,12 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
         aMouseEventData.mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
   } else if (aType.EqualsLiteral("MozMouseHittest")) {
     msg = eMouseHitTest;
-<<<<<<< ours
-=======
-  } else if (aType.EqualsLiteral("MozMouseExploreByTouch")) {
-    msg = eMouseExploreByTouch;
   } else if (aType.EqualsLiteral("dragover")) {
     msg = eDragOver;
     isPWDragEventMessage = true;
   } else if (aType.EqualsLiteral("drop")) {
     msg = eDrop;
     isPWDragEventMessage = true;
->>>>>>> theirs
   } else {
     return Err(NS_ERROR_FAILURE);
   }

@@ -1549,22 +1549,14 @@ nsresult nsHttpChannel::ContinueConnect() {
                      "CORS preflight must have been finished by the time we "
                      "do the rest of ContinueConnect");
 
-<<<<<<< ours
   bool forceOffline = IsForcedOffline();
-=======
-  bool isForcedOffline = IsForcedOffline();
->>>>>>> theirs
 
   // we may or may not have a cache entry at this point
   if (mCacheEntry) {
     // read straight from the cache if possible...
     if (CachedContentIsValid()) {
       // If we're forced offline, and set to bypass the cache, return offline.
-<<<<<<< ours
       if (forceOffline &&
-=======
-      if (isForcedOffline &&
->>>>>>> theirs
           BYPASS_LOCAL_CACHE(mLoadFlags, LoadPreferCacheLoadOverBypass())) {
         return NS_ERROR_OFFLINE;
       }
@@ -1606,11 +1598,7 @@ nsresult nsHttpChannel::ContinueConnect() {
   }
 
   // We're about to hit the network. Don't if we're forced offline.
-<<<<<<< ours
   if (forceOffline) {
-=======
-  if (isForcedOffline) {
->>>>>>> theirs
     return NS_ERROR_OFFLINE;
   }
 
@@ -1722,12 +1710,7 @@ void nsHttpChannel::SpeculativeConnect() {
   // websockets bootstrap), or if we can't do keep-alive (because then we
   // couldn't reuse the speculative connection anyhow).
   if (gIOService->IsOffline() || mUpgradeProtocolCallback ||
-<<<<<<< ours
       !(mCaps & NS_HTTP_ALLOW_KEEPALIVE) || IsForcedOffline()) {
-=======
-      !(mCaps & NS_HTTP_ALLOW_KEEPALIVE) ||
-      IsForcedOffline()) {
->>>>>>> theirs
     return;
   }
 
@@ -8615,7 +8598,6 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
   }
 }
 
-<<<<<<< ours
 bool nsHttpChannel::IsForcedOffline() const {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
@@ -8626,20 +8608,6 @@ bool nsHttpChannel::IsForcedOffline() const {
     mLoadInfo->GetAssociatedBrowsingContext(getter_AddRefs(bc));
   }
   return bc && bc->Top()->GetForceOffline();
-=======
-bool nsHttpChannel::IsForcedOffline() {
-  RefPtr<mozilla::dom::BrowsingContext> bc;
-  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
-  if (bc && bc->Top()->GetForceOffline())
-    return true;
-
-  RefPtr<mozilla::dom::BrowsingContext> wbc;
-  mLoadInfo->GetAssociatedBrowsingContext(getter_AddRefs(wbc));
-  if (wbc && wbc->Top()->GetForceOffline())
-    return true;
-
-  return false;
->>>>>>> theirs
 }
 
 NS_IMETHODIMP
