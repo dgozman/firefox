@@ -405,7 +405,17 @@ bool WebGLContext::CreateAndInitGL(
     }
 
     if (tryANGLE) {
-      return fnCreate(&gl::GLContextProviderEGL::CreateHeadless, "tryANGLE");
+      const auto ret =
+          fnCreate(&gl::GLContextProviderEGL::CreateHeadless, "tryANGLE");
+#ifdef XP_MACOSX
+      // Playwright: ANGLE has no software Metal renderer. Fall back to native
+      // (CGL) when there is no usable Metal device, e.g. in a virtual machine.
+      if (!ret) {
+        return fnCreate(&gl::GLContextProvider::CreateHeadless,
+                        "tryNativeGLAfterANGLE");
+      }
+#endif
+      return ret;
     }
     return nullptr;
   }();
