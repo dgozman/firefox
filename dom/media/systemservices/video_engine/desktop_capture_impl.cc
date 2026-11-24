@@ -417,6 +417,25 @@ int32_t DesktopCaptureImpl::StopCapture() {
   return 0;
 }
 
+int32_t DesktopCaptureImpl::StopCaptureAsync() {
+  RTC_DCHECK_RUN_ON(&mControlThreadChecker);
+
+  mRequestedCapability = mozilla::Nothing();
+  nsCOMPtr<nsIThread> captureThread = mCaptureThread.forget();
+  if (captureThread) {
+    // Playwright: do not block the control thread on the capture thread. The
+    // capturer may need the control thread to produce a frame, e.g. PrintWindow
+    // on Windows is served by the window thread, and waiting here deadlocks.
+    MOZ_ALWAYS_SUCCEEDS(captureThread->Dispatch(NS_NewRunnableFunction(
+        "DesktopCaptureImpl::StopCaptureAsync", [this, self = RefPtr(this)] {
+          ShutdownOnThread();
+          mBufferPool.Release();
+        })));
+    MOZ_ALWAYS_SUCCEEDS(captureThread->AsyncShutdown());
+  }
+  return 0;
+}
+
 bool DesktopCaptureImpl::CaptureStarted() {
   MOZ_ASSERT_UNREACHABLE("Unused");
   return true;

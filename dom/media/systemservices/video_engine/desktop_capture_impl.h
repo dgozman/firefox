@@ -57,6 +57,9 @@ class VideoCaptureModuleEx : public VideoCaptureModule {
 
   virtual void RegisterRawFrameCallback(RawFrameCallback* rawFrameCallback) = 0;
   virtual void DeRegisterRawFrameCallback(RawFrameCallback* rawFrameCallback) = 0;
+  // Stops the capture without waiting for the capture thread. The module must
+  // not be started again afterwards.
+  virtual int32_t StopCaptureAsync() { return StopCapture(); }
   int32_t StartCaptureCounted(const VideoCaptureCapability& aCapability) {
     ++capture_counter_;
     return capture_counter_ == 1 ? StartCapture(aCapability) : 0;
@@ -64,7 +67,7 @@ class VideoCaptureModuleEx : public VideoCaptureModule {
 
   int32_t StopCaptureCounted() {
     --capture_counter_;
-    return capture_counter_ == 0 ? StopCapture() : 0;
+    return capture_counter_ == 0 ? StopCaptureAsync() : 0;
   }
 
  private:
@@ -105,6 +108,7 @@ class DesktopCaptureImpl : public mozilla::DesktopCaptureInterface,
   int32_t StartCapture(const VideoCaptureCapability& aCapability) override;
   virtual bool FocusOnSelectedSource() override;
   int32_t StopCapture() override;
+  int32_t StopCaptureAsync() override;
   bool CaptureStarted() override;
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
