@@ -91,6 +91,14 @@ class InterceptedHttpChannel final
   Atomic<bool> mCallingStatusAndProgress;
   bool mInterceptionReset{false};
 
+  // ----- Playwright begin -----
+  // After resetInterception is called, this request will call into interceptors
+  // again.
+  bool mInterceptAfterServiceWorkerResets{false};
+  // Preserve the worker's bypass decision when Juggler resumes the request.
+  bool mServiceWorkerResetBypass{true};
+  // ----- Playwright end -------
+
   /**
    *  InterceptionTimeStamps is used to record the time stamps of the
    *  interception.
