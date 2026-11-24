@@ -373,6 +373,10 @@ BrowsingContext::FieldValues BrowsingContext::ComputeInitialFields(
     fields.Get<IDX_DefaultLoadFlags>() = inherit->GetDefaultLoadFlags();
     fields.Get<IDX_UseGlobalHistory>() = inherit->GetUseGlobalHistory();
     fields.Get<IDX_AllowJavascript>() = inherit->GetAllowJavascript();
+    // Playwright: make sure touch events override is propagated to the nested
+    // browsing context. See https://bugzilla.mozilla.org/show_bug.cgi?id=2014330
+    fields.Get<IDX_TouchEventsOverrideInternal>() =
+        inherit->GetTouchEventsOverrideInternal();
     fields.Get<IDX_IPAddressSpace>() = inherit->GetIPAddressSpace();
     fields.Get<IDX_ParentalControlsEnabled>() =
         inherit->GetParentalControlsEnabled();
